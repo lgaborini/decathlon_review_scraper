@@ -47,9 +47,13 @@ class DecathlonSpider(scrapy.Spider):
         self.logger.info('Grabbing product variables')
         self.productId = self.driver.execute_script(
             'return window.oxyCodeProduit;')
+        self.productName = response.xpath(
+            '//span[@id="productName"]/text()').extract_first()
         self.num_pages = self.driver.execute_script(
             'return window.Osmose.variables.ProductAvis_nbPages;')
+
         self.logger.info('Product ID: {0}'.format(self.productId))
+        self.logger.info('Product name: {0}'.format(self.productName))
         self.logger.info('Number of pages: {0}'.format(self.num_pages))
 
         # Grab all review pages
@@ -83,6 +87,8 @@ class DecathlonSpider(scrapy.Spider):
                 page, i + 1, len(reviews)))
 
             yield {
+                'productId': self.productId,
+                'productName': self.productName,
                 'ratingValue': review.xpath(
                     './/meta[@itemprop = "ratingValue"]/@content'
                 ).extract_first(),
