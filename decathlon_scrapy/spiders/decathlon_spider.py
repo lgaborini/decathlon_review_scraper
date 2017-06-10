@@ -11,7 +11,8 @@ LOGGER.setLevel(logging.INFO)
 
 class DecathlonSpider(scrapy.Spider):
     name = "decathlon"
-    start_urls = [
+    start_urls = []
+    start_urls_default = [
         'https://www.decathlon.it/zaino-alpinism-22-blu-id_8360597.html'
     ]
 
@@ -19,7 +20,7 @@ class DecathlonSpider(scrapy.Spider):
         'LOG_LEVEL': 'INFO'
     }
 
-    def __init__(self):
+    def __init__(self, url_list=None):
         self.driver = webdriver.PhantomJS()
         self.save_pages = False
         self.save_pages_dir = 'scraped_pages'
@@ -29,6 +30,14 @@ class DecathlonSpider(scrapy.Spider):
                 os.mkdir(self.save_pages_dir)
             except FileExistsError:
                 pass
+
+        if url_list:
+            with open(url_list, 'r') as f:
+                self.start_urls.extend([url.strip() for url in f.readlines()])
+        else:
+            self.start_urls = self.start_urls_default
+
+        self.logger.info("Parsing URLs: {0}".format(self.start_urls))
 
     def parse(self, response):
         """Parse the landing page"""
@@ -113,6 +122,9 @@ class DecathlonSpider(scrapy.Spider):
                 ).extract_first(),
                 'reviewMalus': review.xpath(
                     './/p[contains(@class, "avis_neg")]/text()'
+                ).extract_first(),
+                'fit': review.xpath(
+                    './/p[contains(@class, "avis-taille")]/text()'
                 ).extract_first(),
                 'reviewTitle': review.xpath(
                     './/p[contains(@class, "avis-title")]/text()'
