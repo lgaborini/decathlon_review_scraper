@@ -1,7 +1,11 @@
 import scrapy
 from selenium import webdriver
 
+from decathlon_scrapy.items import ProductItem
+from decathlon_scrapy.items import ProductReviewItem
+
 import os
+import datetime
 
 # Raise loglevel for Selenium
 import logging
@@ -61,6 +65,14 @@ class DecathlonSpider(scrapy.Spider):
         self.num_pages = self.driver.execute_script(
             'return window.Osmose.variables.ProductAvis_nbPages;')
 
+        productItem = ProductItem({
+            'productId': self.productId,
+            'productName': self.productName,
+            'last_fetched': str(datetime.datetime.now()),
+            'productUrl': str(response.url)
+        })
+        yield productItem
+
         self.logger.info('Product ID: {0}'.format(self.productId))
         self.logger.info('Product name: {0}'.format(self.productName))
         self.logger.info('Number of pages: {0}'.format(self.num_pages))
@@ -95,44 +107,32 @@ class DecathlonSpider(scrapy.Spider):
             self.logger.info('Page {0}: parsing review {1} of {2}'.format(
                 page, i + 1, len(reviews)))
 
-            yield {
-                'productId': self.productId,
-                'productName': self.productName,
-                'ratingValue': review.xpath(
-                    './/meta[@itemprop = "ratingValue"]/@content'
-                ).extract_first(),
-                'datePublished': review.xpath(
-                    './/div[@class = "post_by"]/meta[@itemprop = "datePublished"]/../p[@class="text_01"]/b/text()'
-                ).extract_first(),
-                'author': review.xpath(
-                    './/div[@class = "post_by"]//span[@itemprop = "author"]/text()'
-                ).extract_first(),
-                'location':
-                    review.xpath(
-                    './/div[@class = "post_by"]/p/b/span[@itemprop = "author"]/../../text()'
-                ).extract_first(),
-                'review': review.xpath(
-                    'normalize-space(.//p[@itemprop = "description"]/span[@class = "comment"])'
-                ).extract_first(),
-                'usedSince': review.xpath(
-                    './/span[@class = "avis_model_used"]/b/text()'
-                ).extract_first(),
-                'reviewBonus': review.xpath(
-                    './/p[contains(@class, "avis_pos")]/text()'
-                ).extract_first(),
-                'reviewMalus': review.xpath(
-                    './/p[contains(@class, "avis_neg")]/text()'
-                ).extract_first(),
-                'fit': review.xpath(
-                    './/p[contains(@class, "avis-taille")]/text()'
-                ).extract_first(),
-                'reviewTitle': review.xpath(
-                    './/p[contains(@class, "avis-title")]/text()'
-                ).extract_first(),
-                'reviewReply': "".join(review.xpath(
-                    'normalize-space(.//p[@class = "avis_reponse_msg"])'
-                ).extract_first())
-            }
+            yield ProductReviewItem(
+                productId=self.productId,
+                # productName=self.productName,
+                ratingValue=review.xpath(
+                    './/meta[@itemprop = "ratingValue"]/@content').extract_first(),
+                datePublished=review.xpath(
+                    './/div[@class = "post_by"]/meta[@itemprop = "datePublished"]/../p[@class="text_01"]/b/text()').extract_first(),
+                author=review.xpath(
+                    './/div[@class = "post_by"]//span[@itemprop = "author"]/text()').extract_first(),
+                location=review.xpath(
+                    './/div[@class = "post_by"]/p/b/span[@itemprop = "author"]/../../text()').extract_first(),
+                review=review.xpath(
+                    'normalize-space(.//p[@itemprop = "description"]/span[@class = "comment"])').extract_first(),
+                usedSince=review.xpath(
+                    './/span[@class = "avis_model_used"]/b/text()').extract_first(),
+                reviewBonus=review.xpath(
+                    './/p[contains(@class, "avis_pos")]/text()').extract_first(),
+                reviewMalus=review.xpath(
+                    './/p[contains(@class, "avis_neg")]/text()').extract_first(),
+                fit=review.xpath(
+                    './/p[contains(@class, "avis-taille")]/text()').extract_first(),
+                reviewTitle=review.xpath(
+                    './/p[contains(@class, "avis-title")]/text()').extract_first(),
+                reviewReply="".join(review.xpath(
+                    'normalize-space(.//p[@class = "avis_reponse_msg"])').extract_first())
+            )
 
 
 def make_review_page_url(productId, page=1, reviews_per_page=5):

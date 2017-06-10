@@ -9,3 +9,9 @@
 class DecathlonScrapyPipeline(object):
     def process_item(self, item, spider):
         return item
+
+
+class ToDjangoPipeline(object):
+    def process_item(self, item, spider):
+        item.save()
+        return item

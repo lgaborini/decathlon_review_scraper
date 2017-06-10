@@ -9,6 +9,11 @@
 #     http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 #     http://scrapy.readthedocs.org/en/latest/topics/spider-middleware.html
 
+import sys
+import os
+
+import django
+
 BOT_NAME = 'decathlon_scrapy'
 
 SPIDER_MODULES = ['decathlon_scrapy.spiders']
@@ -67,6 +72,10 @@ ROBOTSTXT_OBEY = True
 #ITEM_PIPELINES = {
 #    'decathlon_scrapy.pipelines.DecathlonScrapyPipeline': 300,
 #}
+# Django export
+ITEM_PIPELINES = {
+    'decathlon_scrapy.pipelines.ToDjangoPipeline': 1000,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See http://doc.scrapy.org/en/latest/topics/autothrottle.html
@@ -88,3 +97,12 @@ HTTPCACHE_EXPIRATION_SECS = 0
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+
+# Django integration
+DJANGO_PROJECT_PATH = 'C:/Users/Lorenzo/Dropbox/Local/Dev/Python/decathlon_review/decathlon_browser'
+DJANGO_SETTINGS_MODULE = 'decathlon_browser.settings'
+
+sys.path.insert(0, DJANGO_PROJECT_PATH)
+os.environ['DJANGO_SETTINGS_MODULE'] = DJANGO_SETTINGS_MODULE
+django.setup()
