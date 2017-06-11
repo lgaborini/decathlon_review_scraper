@@ -9,14 +9,12 @@
 
 # Django
 from scrapy_djangoitem import DjangoItem
-from browser.models import Product, ProductReview
+from browser.models import ProductDjangoItem, ProductReviewDjangoItem
 
 
 class ProductItem(DjangoItem):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    django_model = Product
+    django_model = ProductDjangoItem
 
 
 class ProductReviewItem(DjangoItem):
-    django_model = ProductReview
+    django_model = ProductReviewDjangoItem

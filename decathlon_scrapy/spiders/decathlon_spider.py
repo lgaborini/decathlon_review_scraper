@@ -71,7 +71,8 @@ class DecathlonSpider(scrapy.Spider):
             'last_fetched': str(datetime.datetime.now()),
             'productUrl': str(response.url)
         })
-        yield productItem
+        # This skips the pipeline
+        p = productItem.save()
 
         self.logger.info('Product ID: {0}'.format(self.productId))
         self.logger.info('Product name: {0}'.format(self.productName))
@@ -87,12 +88,15 @@ class DecathlonSpider(scrapy.Spider):
             self.logger.info('Creating request for url %s', page_url)
             request = scrapy.Request(url=page_url, callback=self.parse_review)
             request.meta['page'] = page
+            request.meta['ProductItem'] = p
             yield request
             # break
 
     def parse_review(self, response):
         """Extract reviews from a page"""
         page = response.meta['page']
+        productItem = response.meta['ProductItem']
+
         self.logger.info('Parsing page {0}: {1}'.format(page, response.url))
 
         if self.save_pages:
@@ -107,32 +111,33 @@ class DecathlonSpider(scrapy.Spider):
             self.logger.info('Page {0}: parsing review {1} of {2}'.format(
                 page, i + 1, len(reviews)))
 
-            yield ProductReviewItem(
-                productId=self.productId,
-                # productName=self.productName,
-                ratingValue=review.xpath(
+            productReviewItem = ProductReviewItem({
+                'productId': productItem,
+                'ratingValue': review.xpath(
                     './/meta[@itemprop = "ratingValue"]/@content').extract_first(),
-                datePublished=review.xpath(
+                'datePublished': review.xpath(
                     './/div[@class = "post_by"]/meta[@itemprop = "datePublished"]/../p[@class="text_01"]/b/text()').extract_first(),
-                author=review.xpath(
+                'author': review.xpath(
                     './/div[@class = "post_by"]//span[@itemprop = "author"]/text()').extract_first(),
-                location=review.xpath(
+                'location': review.xpath(
                     './/div[@class = "post_by"]/p/b/span[@itemprop = "author"]/../../text()').extract_first(),
-                review=review.xpath(
+                'review': review.xpath(
                     'normalize-space(.//p[@itemprop = "description"]/span[@class = "comment"])').extract_first(),
-                usedSince=review.xpath(
+                'usedSince': review.xpath(
                     './/span[@class = "avis_model_used"]/b/text()').extract_first(),
-                reviewBonus=review.xpath(
+                'reviewBonus': review.xpath(
                     './/p[contains(@class, "avis_pos")]/text()').extract_first(),
-                reviewMalus=review.xpath(
+                'reviewMalus': review.xpath(
                     './/p[contains(@class, "avis_neg")]/text()').extract_first(),
-                fit=review.xpath(
+                'fit': review.xpath(
                     './/p[contains(@class, "avis-taille")]/text()').extract_first(),
-                reviewTitle=review.xpath(
+                'reviewTitle': review.xpath(
                     './/p[contains(@class, "avis-title")]/text()').extract_first(),
-                reviewReply="".join(review.xpath(
+                'reviewReply': "".join(review.xpath(
                     'normalize-space(.//p[@class = "avis_reponse_msg"])').extract_first())
-            )
+            })
+            # This goes to the pipeline
+            yield productReviewItem
 
 
 def make_review_page_url(productId, page=1, reviews_per_page=5):
