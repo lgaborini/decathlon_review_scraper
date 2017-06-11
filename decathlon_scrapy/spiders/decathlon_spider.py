@@ -12,6 +12,12 @@ import logging
 from selenium.webdriver.remote.remote_connection import LOGGER
 LOGGER.setLevel(logging.INFO)
 
+def null_to_blank(s):
+    if s is None:
+        return ""
+    else:
+        return s
+
 
 class DecathlonSpider(scrapy.Spider):
     name = "decathlon"
@@ -123,14 +129,14 @@ class DecathlonSpider(scrapy.Spider):
                     './/div[@class = "post_by"]/p/b/span[@itemprop = "author"]/../../text()').extract_first(),
                 'review': review.xpath(
                     'normalize-space(.//p[@itemprop = "description"]/span[@class = "comment"])').extract_first(),
-                'usedSince': review.xpath(
-                    './/span[@class = "avis_model_used"]/b/text()').extract_first(),
-                'reviewBonus': review.xpath(
-                    './/p[contains(@class, "avis_pos")]/text()').extract_first(),
-                'reviewMalus': review.xpath(
-                    './/p[contains(@class, "avis_neg")]/text()').extract_first(),
-                'fit': review.xpath(
-                    './/p[contains(@class, "avis-taille")]/text()').extract_first(),
+                'usedSince': null_to_blank(review.xpath(
+                    './/span[@class = "avis_model_used"]/b/text()').extract_first()),
+                'reviewBonus': null_to_blank(review.xpath(
+                    './/p[contains(@class, "avis_pos")]/text()').extract_first()),
+                'reviewMalus': null_to_blank(review.xpath(
+                    './/p[contains(@class, "avis_neg")]/text()').extract_first()),
+                'fit': null_to_blank(review.xpath(
+                    './/p[contains(@class, "avis-taille")]/text()').extract_first()),
                 'reviewTitle': review.xpath(
                     './/p[contains(@class, "avis-title")]/text()').extract_first(),
                 'reviewReply': "".join(review.xpath(
