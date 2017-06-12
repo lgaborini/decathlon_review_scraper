@@ -6,6 +6,7 @@ from decathlon_scrapy.items import ProductReviewItem
 
 import os
 import datetime
+from decimal import Decimal
 
 # Raise loglevel for Selenium
 import logging
@@ -75,12 +76,15 @@ class DecathlonSpider(scrapy.Spider):
             '//span[@id="productName"]/text()').extract_first()
         self.num_pages = self.driver.execute_script(
             'return window.Osmose.variables.ProductAvis_nbPages;')
+        self.productPrice = self.driver.execute_script(
+            'return window.tc_vars.product_unitprice_ati;')
 
         productItem = ProductItem({
             'productId': self.productId,
             'productName': self.productName,
             'last_fetched': str(datetime.datetime.now()),
-            'productUrl': str(response.url)
+            'productUrl': str(response.url),
+            'productPrice': Decimal(self.productPrice)
         })
         # This skips the pipeline, saves to Django DB
         # The saved instance is used as the ForeignKey for all reviews
