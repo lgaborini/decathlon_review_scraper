@@ -9,8 +9,12 @@ import datetime
 
 # Raise loglevel for Selenium
 import logging
-from selenium.webdriver.remote.remote_connection import LOGGER
-LOGGER.setLevel(logging.INFO)
+from selenium.webdriver.remote.remote_connection import LOGGER as logger_Selenium
+logger_Selenium.setLevel(logging.INFO)
+
+# Configure Scrapy logging
+# Raise loglevel for this spider
+logging.getLogger('scrapy').setLevel(logging.INFO)
 
 
 def null_to_blank(s):
@@ -26,10 +30,6 @@ class DecathlonSpider(scrapy.Spider):
     start_urls_default = [
         'https://www.decathlon.it/zaino-alpinism-22-blu-id_8360597.html'
     ]
-
-    custom_settings = {
-        'LOG_LEVEL': 'INFO'
-    }
 
     def __init__(self, url=None, url_list=None):
         self.driver = webdriver.PhantomJS()
@@ -66,6 +66,8 @@ class DecathlonSpider(scrapy.Spider):
             self.log('Saved file %s' % filename)
 
         # Grab product variables
+        #
+        # using Selenium to execute JS code
         self.logger.info('Grabbing product variables')
         self.productId = self.driver.execute_script(
             'return window.oxyCodeProduit;')
@@ -80,7 +82,8 @@ class DecathlonSpider(scrapy.Spider):
             'last_fetched': str(datetime.datetime.now()),
             'productUrl': str(response.url)
         })
-        # This skips the pipeline
+        # This skips the pipeline, saves to Django DB
+        # The saved instance is used as the ForeignKey for all reviews
         p = productItem.save()
 
         self.logger.info('Product ID: {0}'.format(self.productId))
@@ -94,7 +97,7 @@ class DecathlonSpider(scrapy.Spider):
                 productId=self.productId, page=page)
 
             # Create the Request object for the page
-            self.logger.info('Creating request for url %s', page_url)
+            self.logger.debug('Creating request for url %s', page_url)
             request = scrapy.Request(url=page_url, callback=self.parse_review)
             request.meta['page'] = page
             request.meta['ProductItem'] = p
@@ -104,6 +107,7 @@ class DecathlonSpider(scrapy.Spider):
     def parse_review(self, response):
         """Extract reviews from a page"""
         page = response.meta['page']
+        # ForeignKey
         productItem = response.meta['ProductItem']
 
         self.logger.info('Parsing page {0}: {1}'.format(page, response.url))

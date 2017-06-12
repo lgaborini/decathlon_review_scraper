@@ -7,11 +7,16 @@
 
 
 class DecathlonScrapyPipeline(object):
+    """Pipeline for non-Django objects."""
+
     def process_item(self, item, spider):
         return item
 
 
 class ToDjangoPipeline(object):
+    """Pipeline for Django objects."""
+    # See ITEM_PIPELINES
+
     def process_item(self, item, spider):
         item.save()
         return item
