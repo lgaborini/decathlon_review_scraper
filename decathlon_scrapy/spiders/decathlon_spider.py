@@ -12,6 +12,7 @@ import logging
 from selenium.webdriver.remote.remote_connection import LOGGER
 LOGGER.setLevel(logging.INFO)
 
+
 def null_to_blank(s):
     if s is None:
         return ""
@@ -30,7 +31,7 @@ class DecathlonSpider(scrapy.Spider):
         'LOG_LEVEL': 'INFO'
     }
 
-    def __init__(self, url_list=None):
+    def __init__(self, url=None, url_list=None):
         self.driver = webdriver.PhantomJS()
         self.save_pages = False
         self.save_pages_dir = 'scraped_pages'
@@ -44,6 +45,8 @@ class DecathlonSpider(scrapy.Spider):
         if url_list:
             with open(url_list, 'r') as f:
                 self.start_urls.extend([url.strip() for url in f.readlines()])
+        elif url:
+            self.start_urls.append(url)
         else:
             self.start_urls = self.start_urls_default
 
