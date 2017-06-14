@@ -100,7 +100,8 @@ HTTPCACHE_EXPIRATION_SECS = 60*60*24*7
 
 
 # Django integration
-DJANGO_PROJECT_PATH = 'C:/Users/Lorenzo/Dropbox/Local/Dev/Python/decathlon_review/decathlon_browser'
+# Set the path to the settings.py module in Django project
+DJANGO_PROJECT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'decathlon_browser')
 DJANGO_SETTINGS_MODULE = 'decathlon_browser.settings'
 
 sys.path.insert(0, DJANGO_PROJECT_PATH)
