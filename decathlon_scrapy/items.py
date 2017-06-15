@@ -5,16 +5,27 @@
 # See documentation in:
 # http://doc.scrapy.org/en/latest/topics/items.html
 
-# import scrapy
-
-# Django
 from scrapy_djangoitem import DjangoItem
-from browser.models import ProductDjangoItem, ProductReviewDjangoItem
+
+# To get your settings from (settings.py):
+from scrapy.utils.project import get_project_settings
+
+settings = get_project_settings()
+
+
+# Django integration
+
+if settings.get("USE_DJANGO"):
+    from browser.models import ProductDjangoItem, ProductReviewDjangoItem
+
+# Notice that DjangoItems are scrapy.Items
 
 
 class ProductItem(DjangoItem):
-    django_model = ProductDjangoItem
+    if settings.get("USE_DJANGO"):
+        django_model = ProductDjangoItem
 
 
 class ProductReviewItem(DjangoItem):
-    django_model = ProductReviewDjangoItem
+    if settings.get("USE_DJANGO"):
+        django_model = ProductReviewDjangoItem

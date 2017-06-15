@@ -44,38 +44,35 @@ ROBOTSTXT_OBEY = True
 TELNETCONSOLE_ENABLED = False
 
 # Override the default request headers:
-#DEFAULT_REQUEST_HEADERS = {
+# DEFAULT_REQUEST_HEADERS = {
 #   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 #   'Accept-Language': 'en',
 #}
 
 # Enable or disable spider middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/spider-middleware.html
-#SPIDER_MIDDLEWARES = {
+# SPIDER_MIDDLEWARES = {
 #    'decathlon_scrapy.middlewares.DecathlonScrapySpiderMiddleware': 543,
 #}
 
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
+# DOWNLOADER_MIDDLEWARES = {
 #    'decathlon_scrapy.middlewares.MyCustomDownloaderMiddleware': 543,
 #}
 
 # Enable or disable extensions
 # See http://scrapy.readthedocs.org/en/latest/topics/extensions.html
-#EXTENSIONS = {
+# EXTENSIONS = {
 #    'scrapy.extensions.telnet.TelnetConsole': None,
 #}
 
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'decathlon_scrapy.pipelines.DecathlonScrapyPipeline': 300,
-#}
-# Django export
 ITEM_PIPELINES = {
-    'decathlon_scrapy.pipelines.ToDjangoPipeline': 1000,
+    'decathlon_scrapy.pipelines.DecathlonScrapyPipeline': 300,
 }
+
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See http://doc.scrapy.org/en/latest/topics/autothrottle.html
@@ -91,19 +88,28 @@ ITEM_PIPELINES = {
 #AUTOTHROTTLE_DEBUG = False
 
 # Enable and configure HTTP caching (disabled by default)
-# See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
+# See
+# http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
 HTTPCACHE_ENABLED = True
-HTTPCACHE_EXPIRATION_SECS = 60*60*24*7
+HTTPCACHE_EXPIRATION_SECS = 60 * 60 * 24 * 7
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 
-# Django integration
-# Set the path to the settings.py module in Django project
-DJANGO_PROJECT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'decathlon_browser')
-DJANGO_SETTINGS_MODULE = 'decathlon_browser.settings'
+# Enable Django integration
+# USE_DJANGO = False
+USE_DJANGO = True
 
-sys.path.insert(0, DJANGO_PROJECT_PATH)
-os.environ['DJANGO_SETTINGS_MODULE'] = DJANGO_SETTINGS_MODULE
-django.setup()
+if USE_DJANGO:
+    # Set the path to the settings.py module in Django project
+    DJANGO_PROJECT_PATH = os.path.join(os.path.dirname(
+        os.path.abspath(__file__)), '..', '..', 'decathlon_browser')
+    DJANGO_SETTINGS_MODULE = 'decathlon_browser.settings'
+
+    sys.path.insert(0, DJANGO_PROJECT_PATH)
+    os.environ['DJANGO_SETTINGS_MODULE'] = DJANGO_SETTINGS_MODULE
+    django.setup()
+
+    # Enable Django pipeline: objects are saved to the Django database
+    ITEM_PIPELINES['decathlon_scrapy.pipelines.ToDjangoPipeline'] = 1000

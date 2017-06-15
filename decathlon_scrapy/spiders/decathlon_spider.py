@@ -8,13 +8,20 @@ import os
 import datetime
 from decimal import Decimal
 
-# Raise loglevel for Selenium
+# Logging: Scrapy native, Selenium
 import logging
 from selenium.webdriver.remote.remote_connection import LOGGER as logger_Selenium
-logger_Selenium.setLevel(logging.INFO)
+
+from scrapy.utils.project import get_project_settings
+
+
+# Get your settings from settings.py:
+settings = get_project_settings()
+
 
 # Configure Scrapy logging
 # Raise loglevel for this spider
+logger_Selenium.setLevel(logging.INFO)
 logging.getLogger('scrapy').setLevel(logging.INFO)
 
 
@@ -79,16 +86,29 @@ class DecathlonSpider(scrapy.Spider):
         self.productPrice = self.driver.execute_script(
             'return window.tc_vars.product_unitprice_ati;')
 
-        productItem = ProductItem({
+        # Deal with parsing error_message=''
+        if self.num_pages is None:
+            raise ValueError("Number of pages is not numeric.")
+
+        productItemDict = {
             'productId': self.productId,
             'productName': self.productName,
             'last_fetched': str(datetime.datetime.now()),
             'productUrl': str(response.url),
             'productPrice': Decimal(self.productPrice)
-        })
-        # This skips the pipeline, saves to Django DB
-        # The saved instance is used as the ForeignKey for all reviews
-        p = productItem.save()
+        }
+        if settings.get("USE_DJANGO"):
+            productItem = ProductItem(productItemDict)
+            # This skips the pipeline, saves to Django DB
+            # The saved instance is used as the ForeignKey for all reviews
+            p = productItem.save()
+        else:
+            # We yield a Dict instead of an Item
+            #
+            # Notice that the obtained Item has no associated schema
+            # itemType distinguishes products from reviews
+            productItemDict['itemType'] = 'product'
+            yield productItemDict
 
         self.logger.info('Product ID: {0}'.format(self.productId))
         self.logger.info('Product name: {0}'.format(self.productName))
@@ -104,14 +124,21 @@ class DecathlonSpider(scrapy.Spider):
             self.logger.debug('Creating request for url %s', page_url)
             request = scrapy.Request(url=page_url, callback=self.parse_review)
             request.meta['page'] = page
-            request.meta['ProductItem'] = p
+
+            if settings.get("USE_DJANGO"):
+                # ForeignKey to saved Django item
+                request.meta['ProductItem'] = p
+            else:
+                request.meta['ProductItem'] = productItemDict['productId']
+
             yield request
             # break
 
     def parse_review(self, response):
         """Extract reviews from a page"""
         page = response.meta['page']
-        # ForeignKey
+
+        # ForeignKey (Django), or productId
         productItem = response.meta['ProductItem']
 
         self.logger.info('Parsing page {0}: {1}'.format(page, response.url))
@@ -128,7 +155,7 @@ class DecathlonSpider(scrapy.Spider):
             self.logger.info('Page {0}: parsing review {1} of {2}'.format(
                 page, i + 1, len(reviews)))
 
-            productReviewItem = ProductReviewItem({
+            productReviewDict = {
                 'productId': productItem,
                 'ratingValue': review.xpath(
                     './/meta[@itemprop = "ratingValue"]/@content').extract_first(),
@@ -152,9 +179,20 @@ class DecathlonSpider(scrapy.Spider):
                     './/p[contains(@class, "avis-title")]/text()').extract_first(),
                 'reviewReply': "".join(review.xpath(
                     'normalize-space(.//p[@class = "avis_reponse_msg"])').extract_first())
-            })
-            # This goes to the pipeline
-            yield productReviewItem
+            }
+
+            if settings.get("USE_DJANGO"):
+                productReviewItem = ProductReviewItem(productReviewDict)
+
+                # This goes to the Django pipeline
+                yield productReviewItem
+            else:
+                # We yield a Dict instead of an Item
+                #
+                # Notice that the obtained Item has no associated schema
+                # To distinguish from the productItem, we add this field
+                productReviewDict['itemType'] = 'review'
+                yield productReviewDict
 
 
 def make_review_page_url(productId, page=1, reviews_per_page=5):

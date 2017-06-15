@@ -18,5 +18,6 @@ class ToDjangoPipeline(object):
     # See ITEM_PIPELINES
 
     def process_item(self, item, spider):
+        # Save the item to the Django database
         item.save()
         return item
