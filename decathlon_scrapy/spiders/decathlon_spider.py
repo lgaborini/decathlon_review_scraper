@@ -5,7 +5,7 @@ from decathlon_scrapy.items import ProductItem
 from decathlon_scrapy.items import ProductReviewItem
 
 import os
-import datetime
+from django.utils import timezone
 from decimal import Decimal
 
 # Logging: Scrapy native, Selenium
@@ -93,7 +93,7 @@ class DecathlonSpider(scrapy.Spider):
         productItemDict = {
             'productId': self.productId,
             'productName': self.productName,
-            'last_fetched': str(datetime.datetime.now()),
+            'last_fetched': str(timezone.now()),
             'productUrl': str(response.url),
             'productPrice': Decimal(self.productPrice)
         }

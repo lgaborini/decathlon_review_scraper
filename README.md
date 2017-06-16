@@ -28,5 +28,15 @@ Otherwise, output is controlled by the `-o` flag (see Scrapy docs).
 * scrapy-djangoitem
 * Selenium
 * PhantomJS
-### For Django integration:
+
+#### For Django integration:
 * Django
+
+## TODO:
+
+- [ ] Fix page errors
+- [ ] Add product image display
+- [ ] Add product image thumbnails in review list
+- [ ] Scrape and store images using the `ImagesPipeline`
+- [ ] Report parsing errors in separate log
+- [ ] Add product statistics
