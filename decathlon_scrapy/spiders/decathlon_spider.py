@@ -5,6 +5,7 @@ from decathlon_scrapy.items import ProductItem
 from decathlon_scrapy.items import ProductReviewItem
 
 import os
+# Django integration
 from django.utils import timezone
 from decimal import Decimal
 
@@ -13,7 +14,8 @@ import logging
 from selenium.webdriver.remote.remote_connection import LOGGER as logger_Selenium
 
 from scrapy.utils.project import get_project_settings
-
+from scrapy.shell import inspect_response
+from urllib.parse import urlparse, urlunparse, urljoin
 
 # Get your settings from settings.py:
 settings = get_project_settings()
@@ -65,6 +67,16 @@ class DecathlonSpider(scrapy.Spider):
         self.logger.info('Getting landing page: %s', response.url)
         self.driver.get(response.url)
 
+        # Get the base URL for the page
+        url_components = urlparse(response.url)
+        baseurl = urlunparse([
+            url_components.scheme,
+            url_components.netloc,
+            '',
+            '',
+            '',
+            ''])
+
         # Write landing page to disk
         if self.save_pages:
             filename = os.path.join(self.save_pages_dir, 'landing_page.html')
@@ -86,16 +98,25 @@ class DecathlonSpider(scrapy.Spider):
         self.productPrice = self.driver.execute_script(
             'return window.tc_vars.product_unitprice_ati;')
 
+        self.logger.info('Product ID: {0}'.format(self.productId))
+        self.logger.info('Product name: {0}'.format(self.productName))
+        self.logger.info('Number of pages: {0}'.format(self.num_pages))
+
         # Deal with parsing error_message=''
         if self.num_pages is None:
             raise ValueError("Number of pages is not numeric.")
+
+        # Run the Scrapy shell to capture additional data (debug)
+        # inspect_response(response, self)
 
         productItemDict = {
             'productId': self.productId,
             'productName': self.productName,
             'last_fetched': str(timezone.now()),
             'productUrl': str(response.url),
-            'productPrice': Decimal(self.productPrice)
+            'productPrice': Decimal(self.productPrice),
+            'productImageUrl': urljoin(baseurl, response.xpath(
+                                        '//img[@id = "productMainPicture"]/@src').extract_first())
         }
         if settings.get("USE_DJANGO"):
             productItem = ProductItem(productItemDict)
@@ -109,10 +130,6 @@ class DecathlonSpider(scrapy.Spider):
             # itemType distinguishes products from reviews
             productItemDict['itemType'] = 'product'
             yield productItemDict
-
-        self.logger.info('Product ID: {0}'.format(self.productId))
-        self.logger.info('Product name: {0}'.format(self.productName))
-        self.logger.info('Number of pages: {0}'.format(self.num_pages))
 
         # Grab all review pages
         for page in range(1, self.num_pages + 1):

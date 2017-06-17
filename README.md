@@ -34,7 +34,9 @@ Otherwise, output is controlled by the `-o` flag (see Scrapy docs).
 
 ## TODO:
 
-- [ ] Fix error `"Number of pages is not numeric."`
-- [ ] Scrape product image URL
+- [ ] Fix page errors
+- [x] Add product image display
+- [x] Add product image thumbnails in review list
 - [ ] Scrape and store images using the `ImagesPipeline`
 - [ ] Report parsing errors in separate log
+- [ ] Add product statistics
