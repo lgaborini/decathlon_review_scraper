@@ -28,6 +28,7 @@ ROBOTSTXT_OBEY = True
 
 # Logging
 LOG_FILE = "lastlog.log"
+LOG_LEVEL = "INFO"
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32

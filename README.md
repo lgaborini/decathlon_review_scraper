@@ -34,6 +34,7 @@ Otherwise, output is controlled by the `-o` flag (see Scrapy docs).
 
 ## TODO:
 
+- [ ] Avoid scraping same reviews if scraper is rerun
 - [ ] Fix page errors
 - [x] Add product image display
 - [x] Add product image thumbnails in review list

@@ -21,9 +21,10 @@ from urllib.parse import urlparse, urlunparse, urljoin
 settings = get_project_settings()
 
 
+# Configure Selenium logging
+logger_Selenium.setLevel(logging.INFO)
 # Configure Scrapy logging
 # Raise loglevel for this spider
-logger_Selenium.setLevel(logging.INFO)
 logging.getLogger('scrapy').setLevel(logging.INFO)
 
 
@@ -40,6 +41,7 @@ class DecathlonSpider(scrapy.Spider):
     start_urls_default = [
         'https://www.decathlon.it/zaino-alpinism-22-blu-id_8360597.html'
     ]
+    log_level = 'INFO'
 
     def __init__(self, url=None, url_list=None):
         self.driver = webdriver.PhantomJS()
@@ -60,6 +62,7 @@ class DecathlonSpider(scrapy.Spider):
         else:
             self.start_urls = self.start_urls_default
 
+        self.logger.setLevel(self.log_level)
         self.logger.info("Parsing URLs: {0}".format(self.start_urls))
 
     def parse(self, response):
