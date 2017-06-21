@@ -14,8 +14,8 @@ import logging
 from selenium.webdriver.remote.remote_connection import LOGGER as logger_Selenium
 
 from scrapy.utils.project import get_project_settings
-from scrapy.shell import inspect_response
 from urllib.parse import urlparse, urlunparse, urljoin
+from scrapy.shell import inspect_response
 
 # Get your settings from settings.py:
 settings = get_project_settings()
@@ -161,7 +161,8 @@ class DecathlonSpider(scrapy.Spider):
         # ForeignKey (Django), or productId
         productItem = response.meta['ProductItem']
 
-        self.logger.info('Parsing page {0}: {1}'.format(page, response.url))
+        self.logger.info('(Product {0}) parsing page {1}: {2}'.
+            format(self.productName, page, response.url))
 
         if self.save_pages:
             with open(os.path.join(
