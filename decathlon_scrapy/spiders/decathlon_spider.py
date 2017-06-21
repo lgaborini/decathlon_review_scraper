@@ -5,6 +5,8 @@ from decathlon_scrapy.items import ProductItem
 from decathlon_scrapy.items import ProductReviewItem
 
 import os
+import hashlib
+
 # Django integration
 from django.utils import timezone
 from decimal import Decimal
@@ -202,11 +204,18 @@ class DecathlonSpider(scrapy.Spider):
                     'normalize-space(.//p[@class = "avis_reponse_msg"])').extract_first())
             }
 
+            # Make the primary key from review contents
+            reviewHash = make_pkey_from_review_item(productReviewDict)
+            productReviewDict['reviewHash'] = reviewHash
+            # import ipdb; ipdb.set_trace()
+
             if settings.get("USE_DJANGO"):
                 productReviewItem = ProductReviewItem(productReviewDict)
-
+                # import ipdb; ipdb.set_trace()
                 # This goes to the Django pipeline
                 yield productReviewItem
+
+                # TODO: ProductReviewItem is no longer JSON serializable
             else:
                 # We yield a Dict instead of an Item
                 #
@@ -227,3 +236,8 @@ def make_review_page_url(productId, page=1, reviews_per_page=5):
                 (page - 1) * reviews_per_page + 1,
                 page)
             )
+
+
+def make_pkey_from_review_item(productReviewDict):
+    """Make the primary key for each review."""
+    return hashlib.md5(productReviewDict['review'].encode('utf-8')).hexdigest()

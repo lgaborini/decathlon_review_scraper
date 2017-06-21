@@ -34,10 +34,11 @@ Otherwise, output is controlled by the `-o` flag (see Scrapy docs).
 
 ## TODO:
 
-- [ ] Avoid scraping same reviews if scraper is rerun
-- [ ] Fix page errors
+- [x] Avoid scraping same reviews if scraper is rerun
 - [x] Add product image display
 - [x] Add product image thumbnails in review list
+- [ ] Fix page errors
 - [ ] Scrape and store images using the `ImagesPipeline`
 - [ ] Report parsing errors in separate log
 - [ ] Add product statistics
+- [ ] Make `ProductReviewDjangoItem` JSON serializable
