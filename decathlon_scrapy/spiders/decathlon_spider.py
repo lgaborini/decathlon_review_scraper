@@ -164,7 +164,7 @@ class DecathlonSpider(scrapy.Spider):
         productItem = response.meta['ProductItem']
 
         self.logger.info('(Product {0}) parsing page {1}: {2}'.
-            format(self.productName, page, response.url))
+            format(self.productId, page, response.url))
 
         if self.save_pages:
             with open(os.path.join(
@@ -175,8 +175,8 @@ class DecathlonSpider(scrapy.Spider):
         # Got a list of reviews, yield items
         reviews = response.xpath('//div[@itemprop = "review"]')
         for i, review in enumerate(reviews):
-            self.logger.info('Page {0}: parsing review {1} of {2}'.format(
-                page, i + 1, len(reviews)))
+            self.logger.info('(Product {0}) page {1}: parsing review {2}/{3}'.format(
+                self.productId, page, i + 1, len(reviews)))
 
             productReviewDict = {
                 'productId': productItem,
