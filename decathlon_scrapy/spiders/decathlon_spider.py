@@ -94,64 +94,64 @@ class DecathlonSpider(scrapy.Spider):
         #
         # using Selenium to execute JS code
         self.logger.info('Grabbing product variables')
-        self.productId = self.driver.execute_script(
+        productItemDict = dict()
+        productItemDict['productId'] = self.driver.execute_script(
             'return window.oxyCodeProduit;')
-        self.productName = response.xpath(
+        productItemDict['productName'] = response.xpath(
             '//span[@id="productName"]/text()').extract_first()
-        self.num_pages = self.driver.execute_script(
-            'return window.Osmose.variables.ProductAvis_nbPages;')
-        self.productPrice = self.driver.execute_script(
-            'return window.tc_vars.product_unitprice_ati;')
+        productItemDict['productPrice'] = Decimal(self.driver.execute_script(
+            'return window.tc_vars.product_unitprice_ati;'))
+        productItemDict['last_fetched'] = str(timezone.now())
+        productItemDict['productImageUrl'] = urljoin(baseurl, response.xpath(
+            '//img[@id = "productMainPicture"]/@src').extract_first())
+        productItemDict['productUrl'] = str(response.url)
 
-        self.logger.info('Product ID: {0}'.format(self.productId))
-        self.logger.info('Product name: {0}'.format(self.productName))
-        self.logger.info('Number of pages: {0}'.format(self.num_pages))
+        # Shorthands and pagination
+        num_pages = self.driver.execute_script(
+            'return window.Osmose.variables.ProductAvis_nbPages;')
+
+        self.logger.info('Product ID: {0}'.format(productItemDict['productId']))
+        self.logger.info('Product name: {0}'.format(productItemDict['productName']))
+        self.logger.info('Number of pages: {0}'.format(num_pages))
 
         # Deal with parsing error_message=''
-        if self.num_pages is None:
+        if num_pages is None:
             raise ValueError("Number of pages is not numeric.")
 
         # Run the Scrapy shell to capture additional data (debug)
         # inspect_response(response, self)
 
-        productItemDict = {
-            'productId': self.productId,
-            'productName': self.productName,
-            'last_fetched': str(timezone.now()),
-            'productUrl': str(response.url),
-            'productPrice': Decimal(self.productPrice),
-            'productImageUrl': urljoin(baseurl, response.xpath(
-                                        '//img[@id = "productMainPicture"]/@src').extract_first())
-        }
         if settings.get("USE_DJANGO"):
             productItem = ProductItem(productItemDict)
             # This skips the pipeline, saves to Django DB
             # The saved instance is used as the ForeignKey for all reviews
             p = productItem.save()
+
+            # TODO: pass directly the ForeignKey
+            # https://stackoverflow.com/questions/10622751/django-foreignkey-instance-vs-raw-id
         else:
             # We yield a Dict instead of an Item
             #
             # Notice that the obtained Item has no associated schema
-            # itemType distinguishes products from reviews
+            # 'itemType' distinguishes products from reviews
             productItemDict['itemType'] = 'product'
             yield productItemDict
 
         # Grab all review pages
-        for page in range(1, self.num_pages + 1):
+        for page in range(1, num_pages + 1):
 
             page_url = make_review_page_url(
-                productId=self.productId, page=page)
+                productId=productItemDict['productId'], page=page)
 
             # Create the Request object for the page
             self.logger.debug('Creating request for url %s', page_url)
             request = scrapy.Request(url=page_url, callback=self.parse_review)
             request.meta['page'] = page
+            request.meta['productItemDict'] = productItemDict
 
             if settings.get("USE_DJANGO"):
                 # ForeignKey to saved Django item
                 request.meta['ProductItem'] = p
-            else:
-                request.meta['ProductItem'] = productItemDict['productId']
 
             yield request
             # break
@@ -160,11 +160,17 @@ class DecathlonSpider(scrapy.Spider):
         """Extract reviews from a page"""
         page = response.meta['page']
 
-        # ForeignKey (Django), or productId
-        productItem = response.meta['ProductItem']
+        productItemDict = response.meta['productItemDict']
+
+        # The ForeignKey: if Django, a saved ProductItem object
+        if settings.get("USE_DJANGO"):
+            # ForeignKey (Django)
+            productIdKey = response.meta['ProductItem']
+        else:
+            productIdKey = productItemDict['productId']
 
         self.logger.info('(Product {0}) parsing page {1}: {2}'.
-            format(self.productId, page, response.url))
+            format(productItemDict['productId'], page, response.url))
 
         if self.save_pages:
             with open(os.path.join(
@@ -176,10 +182,10 @@ class DecathlonSpider(scrapy.Spider):
         reviews = response.xpath('//div[@itemprop = "review"]')
         for i, review in enumerate(reviews):
             self.logger.info('(Product {0}) page {1}: parsing review {2}/{3}'.format(
-                self.productId, page, i + 1, len(reviews)))
+                productItemDict['productId'], page, i + 1, len(reviews)))
 
             productReviewDict = {
-                'productId': productItem,
+                'productId': productIdKey,
                 'ratingValue': review.xpath(
                     './/meta[@itemprop = "ratingValue"]/@content').extract_first(),
                 'datePublished': review.xpath(
