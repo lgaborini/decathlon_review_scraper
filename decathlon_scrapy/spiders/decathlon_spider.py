@@ -1,11 +1,14 @@
 import scrapy
 from selenium import webdriver
+from scrapy.utils.project import get_project_settings
 
 from decathlon_scrapy.items import ProductItem
 from decathlon_scrapy.items import ProductReviewItem
 
 import os
 import hashlib
+import datetime
+from urllib.parse import urlparse, urlunparse, urljoin
 
 # Django integration
 from django.utils import timezone
@@ -15,8 +18,7 @@ from decimal import Decimal
 import logging
 from selenium.webdriver.remote.remote_connection import LOGGER as logger_Selenium
 
-from scrapy.utils.project import get_project_settings
-from urllib.parse import urlparse, urlunparse, urljoin
+# Debugging
 from scrapy.shell import inspect_response
 
 # Get your settings from settings.py:
@@ -184,12 +186,17 @@ class DecathlonSpider(scrapy.Spider):
             self.logger.info('(Product {0}) page {1}: parsing review {2}/{3}'.format(
                 productItemDict['productId'], page, i + 1, len(reviews)))
 
+            # Parse the publication date
+            datePublishedRaw = review.xpath(
+                    './/div[@class = "post_by"]/meta[@itemprop = "datePublished"]/../p[@class="text_01"]/b/text()').extract_first()
+
+            datePublished = datetime.datetime.strptime(datePublishedRaw, '%d/%m/%Y')
+
             productReviewDict = {
                 'productId': productIdKey,
-                'ratingValue': review.xpath(
-                    './/meta[@itemprop = "ratingValue"]/@content').extract_first(),
-                'datePublished': review.xpath(
-                    './/div[@class = "post_by"]/meta[@itemprop = "datePublished"]/../p[@class="text_01"]/b/text()').extract_first(),
+                'ratingValue': int(review.xpath(
+                    './/meta[@itemprop = "ratingValue"]/@content').extract_first()),
+                'datePublished': datePublished.date(),
                 'author': review.xpath(
                     './/div[@class = "post_by"]//span[@itemprop = "author"]/text()').extract_first(),
                 'location': review.xpath(
