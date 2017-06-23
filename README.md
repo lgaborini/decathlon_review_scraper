@@ -42,3 +42,4 @@ Otherwise, output is controlled by the `-o` flag (see Scrapy docs).
 - [ ] Report parsing errors in separate log
 - [ ] Add product statistics
 - [ ] Make `ProductReviewDjangoItem` JSON serializable
+- [ ] Set review date as a `Datetime` object
